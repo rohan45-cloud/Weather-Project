@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Weather App</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            height: 100vh;
+            background: linear-gradient(135deg, #74ABE2, #5563DE);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background 1s ease;
+        }
+        
+        .container {
+            width: 370px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            color: #fff;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        h2 {
+            margin-bottom: 15px;
+        }
+        
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 6px 0;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+            font-size: 1rem;
+        }
+        
+        button {
+            background: #00e8f8;
+            border: none;
+            padding: 10px 15px;
+            color: #222;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #fff;
+        }
+        
+        .weather-info {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: 0.8s ease;
+        }
+        
+        .weather-info.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .weather-info img {
+            width: 100px;
+            margin: 10px 0;
+        }
+        
+        .temp {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .details {
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+        
+        .sun-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+        
+        .time {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #fff;
+            font-weight: 500;
+        }
+        
+        .error {
+            margin-top: 10px;
+            color: #ff8080;
+        }
+        
+        .anim-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .cloud {
+            position: absolute;
+            top: 10%;
+            left: -30%;
+            width: 160%;
+            height: 60px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+            filter: blur(8px);
+            animation: moveClouds 20s linear infinite;
+        }
+        
+        @keyframes moveClouds {
+            from {
+                transform: translateX(-5%);
+            }
+            to {
+                transform: translateX(5%);
+            }
+        }
+        
+        .rain {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .drop {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            animation: fall .6s linear infinite;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-10%);
+                opacity: .8;
+            }
+            100% {
+                transform: translateY(110vh);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="anim-layer">
+        <div class="cloud" id="cloudLayer"></div>
+        <div class="rain" id="rainLayer"></div>
+    </div>
+
+    <!-- Weather App Only -->
+    <div class="container" id="appBox">
+        <h2>🌦️ Smart Weather App</h2>
+        <div class="search-box">
+            <input type="text" id="cityInput" placeholder="Enter city name">
+            <button onclick="getWeather()">Search</button>
+        </div>
+        <div id="error" class="error"></div>
+        <div id="weatherInfo" class="weather-info">
+            <h3 id="cityName"></h3>
+            <img id="icon" src="" alt="icon">
+            <div class="temp" id="temperature"></div>
+            <div class="details" id="details"></div>
+            <div class="sun-info" id="sun"></div>
+            <div class="time" id="localTime"></div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "60cba8e9ac7abfdf4e6c5c2e914b64e9";
+
+        async function getWeather() {
+            const city = document.getElementById("cityInput").value.trim();
+            const weatherDiv = document.getElementById("weatherInfo");
+            const errorDiv = document.getElementById("error");
+
+            if (!city) {
+                errorDiv.textContent = "Please enter a city name!";
+                weatherDiv.classList.remove("active");
+                return;
+            }
+
+            try {
+                errorDiv.textContent = "";
+                const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.cod != 200) {
+                    errorDiv.textContent = "City not found!";
+                    weatherDiv.classList.remove("active");
+                    return;
+                }
+
+                document.getElementById("cityName").textContent = `${data.name}, ${data.sys.country}`;
+                document.getElementById("temperature").textContent = `${data.main.temp.toFixed(1)}°C`;
+                document.getElementById("details").innerHTML = `🌡️ Feels like: ${data.main.feels_like.toFixed(1)}°C<br>
+      💧 Humidity: ${data.main.humidity}%<br> 🌬️ Wind: ${data.wind.speed} m/s<br> ☁️ Condition: ${data.weather[0].main}`;
+
+                const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString();
+                const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString();
+                document.getElementById("sun").innerHTML = `🌅 Sunrise: ${sunrise} | 🌇 Sunset: ${sunset}`;
+
+                const iconCode = data.weather[0].icon;
+                document.getElementById("icon").src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+                const timezoneOffset = data.timezone;
+                startClock(timezoneOffset);
+                const weatherType = data.weather[0].main.toLowerCase();
+                setAnimation(weatherType);
+
+                weatherDiv.classList.add("active");
+            } catch (err) {
+                errorDiv.textContent = "Error fetching weather data!";
+            }
+        }
+
+        function startClock(offsetSeconds) {
+            const timeEl = document.getElementById("localTime");
+            clearInterval(window._clock);
+
+            function updateTime() {
+                const nowUTC = new Date(new Date().getTime() + new Date().getTimezoneOffset() * 60000);
+                const localTime = new Date(nowUTC.getTime() + offsetSeconds * 1000);
+                timeEl.textContent = "🕒 Local Time: " + localTime.toLocaleTimeString();
+            }
+
+            updateTime();
+            window._clock = setInterval(updateTime, 1000);
+        }
+
+        function setAnimation(weather) {
+            const cloudLayer = document.getElementById("cloudLayer");
+            const rainLayer = document.getElementById("rainLayer");
+            rainLayer.innerHTML = "";
+
+            if (weather.includes("rain")) {
+                for (let i = 0; i < 60; i++) {
+                    const drop = document.createElement("div");
+                    drop.className = "drop";
+                    drop.style.left = Math.random() * 100 + "%";
+                    drop.style.animationDelay = Math.random() + "s";
+                    drop.style.height = 10 + Math.random() * 20 + "px";
+                    rainLayer.appendChild(drop);
+                }
+                cloudLayer.style.opacity = 0.8;
+                document.body.style.background = "linear-gradient(135deg,#3a6073,#16222a)";
+            } else if (weather.includes("cloud")) {
+                cloudLayer.style.opacity = 0.7;
+                document.body.style.background = "linear-gradient(135deg,#757f9a,#d7dde8)";
+            } else if (weather.includes("clear")) {
+                cloudLayer.style.opacity = 0.2;
+                document.body.style.background = "linear-gradient(135deg,#56CCF2,#2F80ED)";
+            } else if (weather.includes("snow")) {
+                for (let i = 0; i < 30; i++) {
+                    const snow = document.createElement("div");
+                    snow.className = "drop";
+                    snow.style.left = Math.random() * 100 + "%";
+                    snow.style.height = "8px";
+                    snow.style.width = "8px";
+                    snow.style.borderRadius = "50%";
+                    snow.style.background = "white";
+                    snow.style.animationDuration = 3 + Math.random() * 3 + "s";
+                    rainLayer.appendChild(snow);
+                }
+                cloudLayer.style.opacity = 0.6;
+                document.body.style.background = "linear-gradient(135deg,#E0EAFC,#CFDEF3)";
+            } else {
+                cloudLayer.style.opacity = 0.5;
+                document.body.style.background = "linear-gradient(135deg,#74ABE2,#5563DE)";
+            }
+        }
+    </script>
+</body>
+
+</html>
